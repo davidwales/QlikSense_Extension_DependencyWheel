@@ -1,0 +1,9 @@
+{
+	"name" : "Dependency Wheel Chart",
+	"description" : "Extension with D3 Chord Diagram",
+	"icon" : "extension",
+	"type" : "visualization",
+	"version": "1.0",
+	"preview" : "DependencyWheel.png",
+	"author": "Ralf Becher, TIQ Solutions GmbH"
+}

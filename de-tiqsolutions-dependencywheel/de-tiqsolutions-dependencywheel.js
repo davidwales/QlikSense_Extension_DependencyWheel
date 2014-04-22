@@ -82,16 +82,7 @@ define(["jquery", "./d3.dependencyWheel"], function($, properties) {
                     nodesObj2.push({id: this[1].qText});
                   }
                 }
-              });
-              nodes2.sort();
-              nodesObj2.sort(orderByIdAscending);
-              nodes = nodes.concat(nodes2);
-              nodesObj = nodesObj.concat(nodesObj2);
-              //not needed anymore
-              nodes2 = [];
-              nodesObj2 = [];
-              //Edges A->B and B->A
-              $.each(layout.qHyperCube.qDataPages[0].qMatrix, function(index, value) {
+                //Edges A->B and B->A
                 if (!this[0].qIsEmpty) {
                   if ($.inArray(this[0].qText + '-' + this[1].qText, edges) == -1) {
                     edges.push(this[0].qText + '-' + this[1].qText);
@@ -100,8 +91,16 @@ define(["jquery", "./d3.dependencyWheel"], function($, properties) {
                     edgesObj.push({source: this[1].qText, target: this[0].qText, weight: this[2].qNum});
                   }
                 }
-                $('#'+id).html("");
               });
+              nodes2.sort();
+              nodesObj2.sort(orderByIdAscending);
+              nodes = nodes.concat(nodes2);
+              nodesObj = nodesObj.concat(nodesObj2);
+              //not needed anymore
+              nodes2 = [];
+              nodesObj2 = [];
+
+              $('#'+id).html("");
   
               var data = {
                 packageNames: nodes,

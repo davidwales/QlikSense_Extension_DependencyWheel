@@ -52,6 +52,7 @@ d3.chart.dependencyWheel = function(options) {
 
       var matrix = data.matrix;
       var packageNames = data.packageNames;
+	  var colorPalette = data.colorPalette;
       var radius = width / 2 - margin;
 
       // create the layout
@@ -80,8 +81,9 @@ d3.chart.dependencyWheel = function(options) {
         .outerRadius(radius + 20);
 
       var fill = function(d) {
-        if (d.index === 0) return '#ccc';
-        return "hsl(" + parseInt(((packageNames[d.index][0].charCodeAt() - 97) / 26) * 360, 10) + ",90%,70%)";
+        //if (d.index === 0) return '#ccc';
+        //return "hsl(" + parseInt(((packageNames[d.index][0].charCodeAt() - 97) / 26) * 360, 10) + ",90%,70%)";
+		return colorPalette[d.index];
       };
 
       // Returns an event handler for fading a given chord group.

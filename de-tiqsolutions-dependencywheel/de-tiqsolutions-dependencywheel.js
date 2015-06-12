@@ -1,12 +1,11 @@
 requirejs.config({
 	shim : {
 		"extensions/de-tiqsolutions-dependencywheel/d3.dependencyWheel" : {
-			"deps" : ["extensions/de-tiqsolutions-dependencywheel/d3.min", "extensions/de-tiqsolutions-dependencywheel/dependencywheelhelper"]
+			"deps" : ["extensions/de-tiqsolutions-dependencywheel/d3.min"]
 		}
 	}
 });
-define(["jquery", "./d3.dependencyWheel"], function($, properties) {
-	
+define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, qlik, dependencyWheel, chroma) {
 	return {
 		initialProperties: {
 			version: 1.0,
@@ -38,7 +37,37 @@ define(["jquery", "./d3.dependencyWheel"], function($, properties) {
 					uses: "sorting"
 				},
 				settings: {
-					uses: "settings"
+					uses: "settings",
+					items : {
+					  colorSchema: {
+						  ref: "colorSchema",
+						  type: "string",
+						  component: "dropdown",
+						  label: "Color and legend",
+						  options: 
+							[ {
+								value: "#fff7bb,#fca835,#ee7617,#cb4b02,#993404",
+								label: "Sequencial"
+							}, {
+								value: "#993404,#cb4b02,#ee7617,#fca835,#fff7bb",
+								label: "Sequencial (Reverse colors)"
+							}, {
+								value: "#3d53a2,#77b7e5,#e7f1f6,#f9bd7e,#d24d3e",
+								label: "Diverging"
+							}, {
+								value: "#d24d3e,#f9bd7e,#e7f1f6,#77b7e5,#3d53a2",
+								label: "Diverging (Reverse colors)"
+							}],
+							defaultValue: "#fff7bb,#fca835,#ee7617,#cb4b02,#993404"
+						},
+						isAdjacencyList:{
+							ref: "isAdjacencyList",
+							type: "boolean",
+							component: "checkbox",
+							label: "Dim1-Dim2 is Adjacency List",
+							defaultValue: false
+						}
+					}
 				}
 			}
 		},
@@ -47,18 +76,26 @@ define(["jquery", "./d3.dependencyWheel"], function($, properties) {
 		},
 
 		paint: function ( $element, layout ) {
-          
+ 
+		  $element.html("");  
+		  
           var qData = layout.qHyperCube.qDataPages[0];
-        	var id = "container_"+ layout.qInfo.qId;
+		  var id = "container_"+ layout.qInfo.qId;
           var emtpyDim = "n/a";
-          
+  
+		  // custom properties
+		  var isAdjacencyList = layout.isAdjacencyList,
+		  	  colorSchema = layout.colorSchema.split(",");
+
           if(qData && qData.qMatrix) {
-              var nodes = [];
-              var nodes2 = [];
-              var nodesObj = [];
-              var nodesObj2 = [];
-              var edges = [];
-              var edgesObj = [];
+			//console.log(qData);
+              var nodes = [],
+                  nodes2 = [],
+                  nodesObj = [],
+                  nodesObj2 = [],
+                  edges = [],
+                  edgesObj = [],
+			      idx = -99;
               //loop through the rows of the cube and push the values into the array
               $.each(layout.qHyperCube.qDataPages[0].qMatrix, function(index, value) {
                 if (!this[0].qIsEmpty) {
@@ -84,33 +121,53 @@ define(["jquery", "./d3.dependencyWheel"], function($, properties) {
                 }
                 //Edges A->B and B->A
                 if (!this[0].qIsEmpty) {
-                  if ($.inArray(this[0].qText + '-' + this[1].qText, edges) == -1) {
-                    edges.push(this[0].qText + '-' + this[1].qText);
-                    edgesObj.push({source: this[0].qText, target: this[1].qText, weight: this[2].qNum});
-                    //add the opposite direction (not for real graphs..)
-                    edgesObj.push({source: this[1].qText, target: this[0].qText, weight: this[2].qNum});
-                  }
+					if ($.inArray(this[0].qText + '-' + this[1].qText, edges) == -1) {
+						edges.push(this[0].qText + '-' + this[1].qText);
+						edgesObj.push({source: this[0].qText, target: this[1].qText, weight: this[2].qNum});
+
+						if (!isAdjacencyList) {
+							idx = $.inArray(this[1].qText + '-' + this[0].qText, edges)
+							if (idx == -1) {
+								//add the opposite direction (not for real graphs..)
+								edgesObj.push({source: this[1].qText, target: this[0].qText, weight: this[2].qNum});
+							} else {
+								//aggregate
+								edgesObj[idx].weight += this[2].qNum;
+							}
+						}
+					}
                 }
               });
-              nodes2.sort();
+              nodes.sort(orderByIdAscending);
+              nodesObj.sort(orderByIdAscending);
+              nodes2.sort(orderByIdAscending);
               nodesObj2.sort(orderByIdAscending);
+			  console.log(nodesObj2);
               nodes = nodes.concat(nodes2);
               nodesObj = nodesObj.concat(nodesObj2);
+			  console.log(nodesObj);
+			  console.log(edgesObj);
+			  
               //not needed anymore
               nodes2 = [];
               nodesObj2 = [];
 
-              $('#'+id).html("");
-  
+			  var colors = chroma.interpolate.bezier(colorSchema),			  
+				colorPalette = [1, 1],
+				colorPaletteSize = nodes.length,
+				colorPaletteStep = 1 / (colorPaletteSize - 1);
+				for (i = 0; i < colorPaletteSize; i++) {
+					colorPalette[i] = colors(i * colorPaletteStep);
+				}
+				
               var data = {
                 packageNames: nodes,
-                matrix: createMatrix(nodesObj,edgesObj)
+                matrix: createMatrix(nodesObj,edgesObj),
+				colorPalette: colorPalette
               };
 	
               var elementWidth = Math.min($element.width(),$element.height());
               var chartWidth = Math.floor(elementWidth * 0.76);
-
-              //$element.html("<div id='"+id+"' style='position: relative;' width='"+elementWidth+"px' height='"+elementWidth+"px'></div>" );
 
               $element.append($('<div />').attr("id", id).width($element.width()).height($element.height()));
 
@@ -129,8 +186,39 @@ define(["jquery", "./d3.dependencyWheel"], function($, properties) {
 
               var svg = $('#'+id+' svg');
               var bb = svg[0].getBBox();
-              svg[0].setAttribute('viewBox',[bb.x,bb.y,bb.width,bb.height].join(','));
+              svg[0].setAttribute('viewBox',[bb.x,bb.y,bb.width,bb.height].join(','));			  
+			  console.log(svg[0]);
             }
 		}
 	};
 } );
+
+function createMatrix(nodes,edges) {
+  var edgeHash = {};
+  for (x in edges) {
+	var id = edges[x].source + "-" + edges[x].target;
+	edgeHash[id] = edges[x];
+  }
+  matrix = [];
+  //create all possible edges
+  for (a in nodes) {
+	var grid = [];
+	for (b in nodes) {
+	  var id = nodes[a].id + "-" + nodes[b].id;
+	  if (edgeHash[id]) {
+		grid.push(edgeHash[id].weight);
+	  } else {
+		grid.push(0);
+	  }
+	}
+	matrix.push(grid);
+  }
+  return matrix;
+}
+
+function orderByIdAscending(a, b) {
+  if (a.id > b.id) {
+	return 1;
+  }
+  return -1;
+}

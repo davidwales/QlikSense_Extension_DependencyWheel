@@ -50,8 +50,11 @@ d3.chart.dependencyWheel = function(options) {
 
       var formatX = d3.format("0,.2f");
 
-      var matrix = data.matrix;
+      var self = data.self;
+	  var matrix = data.matrix;
       var packageNames = data.packageNames;
+	  var nodes = data.nodes;
+	  var dim1cnt = Math.max(0,data.dim1cnt);
 	  var colorPalette = data.colorPalette;
       var radius = width / 2 - margin;
 
@@ -121,19 +124,22 @@ d3.chart.dependencyWheel = function(options) {
 
       chord.matrix(matrix);
 
-      var rootGroup = chord.groups()[0];
-      var rotation = - (rootGroup.endAngle - rootGroup.startAngle) / 2 * (180 / Math.PI);
-
+//      var rootGroup = chord.groups()[0];
+      var rotation = 90 - (chord.groups()[dim1cnt-1].endAngle - chord.groups()[0].startAngle) / 2 * (180 / Math.PI);
+	  
       var g = gEnter.selectAll("g.group")
         .data(chord.groups)
         .enter().append("svg:g")
         .attr("class", "group")
         .attr("transform", function(d) {
-          return "rotate(" + rotation + ")";
+			return "rotate(" + rotation + ")";
         })
-        .attr("title", function(d,i,g) { 
-          return "Group: "+formatX(d.value);
-        });
+		.on("click", function(d,i) {
+			self.backendApi.selectValues(nodes[i].dim, [nodes[i].element], true);
+		});
+		g.append("title").text(function(d,i,g) {
+			  return "Total "+nodes[i].id+"\n"+formatX(d.value);
+			});
 
       g.append("svg:path")
         .style("fill", fill)
@@ -164,11 +170,15 @@ d3.chart.dependencyWheel = function(options) {
             return "rotate(" + rotation + ")";
           })
           .style("opacity", 1)
+		  .on("click", function(d,i) {
+			self.backendApi.selectValues(0, [nodes[d.source.index].element], false);
+			self.backendApi.selectValues(1, [nodes[d.target.index].element], false);
+		  })
           // Add an elaborate mouseover title for each chord.
           .append("title").text(function(d) {
-            return packageNames[d.source.index]
-                 + " → " + packageNames[d.target.index]
-                 + ": " + formatX(d.source.value);
+            return nodes[d.source.index].id
+                 + " → " + nodes[d.target.index].id
+                 + "\n" + formatX(d.source.value);
           });
 
     });

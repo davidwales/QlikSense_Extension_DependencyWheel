@@ -1,3 +1,7 @@
+/*
+Created by Ralf Becher - ralf.becher@tiq-solutions.de - (c) 2015 TIQ Solutions, Leipzig, Germany
+Tested on Qlik Sense 2.1.1
+*/
 requirejs.config({
 	shim : {
 		"extensions/de-tiqsolutions-dependencywheel/d3.dependencyWheel" : {
@@ -43,7 +47,7 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
 						  ref: "colorSchema",
 						  type: "string",
 						  component: "dropdown",
-						  label: "Color and legend",
+						  label: "Color and Legend",
 						  options: 
 							[ {
 								value: "#fff7bb,#fca835,#ee7617,#cb4b02,#993404",
@@ -59,13 +63,6 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
 								label: "Diverging (Reverse colors)"
 							}],
 							defaultValue: "#fff7bb,#fca835,#ee7617,#cb4b02,#993404"
-						},
-						isAdjacencyList:{
-							ref: "isAdjacencyList",
-							type: "boolean",
-							component: "checkbox",
-							label: "Dim1-Dim2 is Adjacency List",
-							defaultValue: false
 						}
 					}
 				}
@@ -87,7 +84,17 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
 		  var isAdjacencyList = layout.isAdjacencyList,
 		  	  colorSchema = layout.colorSchema.split(",");
 
-          if(qData && qData.qMatrix) {
+		var dimensionLabels = layout.qHyperCube.qDimensionInfo.map(function(d) {
+			return d.qFallbackTitle;
+		});
+		var qDimensionType = layout.qHyperCube.qDimensionInfo.map(function(d) {
+			return d.qDimensionType;
+		});
+		var qDimSort = layout.qHyperCube.qDimensionInfo.map(function(d) {
+			return d.qSortIndicator;
+		});
+
+		if(qData && qData.qMatrix) {
 			//console.log(qData);
               var nodes = [],
                   nodes2 = [],
@@ -95,17 +102,23 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
                   nodesObj2 = [],
                   edges = [],
                   edgesObj = [],
-			      idx = -99;
+				  dim1cnt = 0,
+			      idx = -99,
+				  node1Id = "",
+				  node2Id = "",
+				  edgeId = "",
+				  edgeIdRev = "";
               //loop through the rows of the cube and push the values into the array
               $.each(layout.qHyperCube.qDataPages[0].qMatrix, function(index, value) {
                 if (!this[0].qIsEmpty) {
                   //Nodes of 1st dimension:
                   if(this[0].qIsOtherCell) {
-					           this[0].qText = layout.qHyperCube.qDimensionInfo[0].othersLabel;
+						this[0].qText = layout.qHyperCube.qDimensionInfo[0].othersLabel;
                   }
+				  node1Id = dimensionLabels[0] + ":" + this[0].qText;
                   if ($.inArray(this[0].qText, nodes) == -1) {
                     nodes.push(this[0].qText);
-                    nodesObj.push({id: this[0].qText});
+                    nodesObj.push({id: node1Id, label: this[0].qText, dim: 0, num: this[0].qNum, element: this[0].qElemNumber});
                   }
 				          //Nodes of 2nd dimension:
                   if(this[1].qIsOtherCell) {
@@ -114,39 +127,58 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
                   if (this[1].qText == '-') {
                     this[1].qText = emtpyDim;
                   }
+				  node2Id = dimensionLabels[1] + ":" + this[1].qText;
                   if ($.inArray(this[1].qText, nodes2) == -1) {
-                    nodes2.push(this[1].qText);
-                    nodesObj2.push({id: this[1].qText});
+					nodes2.push(this[1].qText);
+                    nodesObj2.push({id: node2Id, label: this[1].qText, dim: 1, num: this[1].qNum, element: this[1].qElemNumber});
                   }
                 }
                 //Edges A->B and B->A
                 if (!this[0].qIsEmpty) {
-					if ($.inArray(this[0].qText + '-' + this[1].qText, edges) == -1) {
-						edges.push(this[0].qText + '-' + this[1].qText);
-						edgesObj.push({source: this[0].qText, target: this[1].qText, weight: this[2].qNum});
-
-						if (!isAdjacencyList) {
-							idx = $.inArray(this[1].qText + '-' + this[0].qText, edges)
-							if (idx == -1) {
-								//add the opposite direction (not for real graphs..)
-								edgesObj.push({source: this[1].qText, target: this[0].qText, weight: this[2].qNum});
-							} else {
-								//aggregate
-								edgesObj[idx].weight += this[2].qNum;
-							}
-						}
+					edgeId = node1Id + "-" + node2Id;
+					if ($.inArray(edgeId, edges) == -1) {
+						edges.push(edgeId);
+						edgesObj.push({id: edgeId, source: node1Id, target: node2Id, weight: this[2].qNum});
+					}
+					edgeIdRev = node2Id + "-" + node1Id;
+					idx = $.inArray(edgeIdRev, edges);
+					if (idx == -1) {
+						//add the opposite direction (not for real graphs..)
+						edges.push(edgeIdRev);
+						edgesObj.push({id: edgeIdRev, source: node2Id, target: node1Id, weight: this[2].qNum});
 					}
                 }
               });
-              nodes.sort(orderByIdAscending);
-              nodesObj.sort(orderByIdAscending);
-              nodes2.sort(orderByIdAscending);
-              nodesObj2.sort(orderByIdAscending);
-			  console.log(nodesObj2);
+			dim1cnt = nodes.length;
+			
+			// Sorting Dim2
+			if (qDimensionType[1] == "N") {
+				// Numeric
+				if (qDimSort[1] == "A") {
+					nodesObj2.sort(function(o1,o2){ return o1.num - o2.num; });
+				} else {
+					nodesObj2.sort(function(o1,o2){ return o2.num - o1.num; });
+				}
+			} else {
+				// Alphabetic
+				if (qDimSort[1] == "A") {
+					nodesObj2.sort(function(a, b) {
+						var x = a.id.toLowerCase(), y = b.id.toLowerCase();   
+						return x < y ? -1 : x > y ? 1 : 0;
+					});
+				} else {
+					nodesObj2.sort(function(a, b) {
+						var y = a.id.toLowerCase(), x = b.id.toLowerCase();   
+						return x < y ? -1 : x > y ? 1 : 0;
+					});
+				}
+			}
+			nodes2 = nodesObj2.map(function(d) {
+				return d.label;
+			});
+			
               nodes = nodes.concat(nodes2);
               nodesObj = nodesObj.concat(nodesObj2);
-			  console.log(nodesObj);
-			  console.log(edgesObj);
 			  
               //not needed anymore
               nodes2 = [];
@@ -156,13 +188,16 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
 				colorPalette = [1, 1],
 				colorPaletteSize = nodes.length,
 				colorPaletteStep = 1 / (colorPaletteSize - 1);
-				for (i = 0; i < colorPaletteSize; i++) {
-					colorPalette[i] = colors(i * colorPaletteStep);
-				}
+			for (i = 0; i < colorPaletteSize; i++) {
+				colorPalette[i] = colors(i * colorPaletteStep);
+			}
 				
               var data = {
+				self: this,
                 packageNames: nodes,
-                matrix: createMatrix(nodesObj,edgesObj),
+				nodes: nodesObj,
+				dim1cnt: dim1cnt,
+                matrix: createMatrix(nodesObj,edges,edgesObj),
 				colorPalette: colorPalette
               };
 	
@@ -187,38 +222,29 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
               var svg = $('#'+id+' svg');
               var bb = svg[0].getBBox();
               svg[0].setAttribute('viewBox',[bb.x,bb.y,bb.width,bb.height].join(','));			  
-			  console.log(svg[0]);
             }
 		}
 	};
 } );
 
-function createMatrix(nodes,edges) {
-  var edgeHash = {};
-  for (x in edges) {
-	var id = edges[x].source + "-" + edges[x].target;
-	edgeHash[id] = edges[x];
-  }
-  matrix = [];
-  //create all possible edges
+function createMatrix(nodes,edges,edgesObj) {
+  var id = "", pos = 0, matrix = [];
   for (a in nodes) {
 	var grid = [];
 	for (b in nodes) {
-	  var id = nodes[a].id + "-" + nodes[b].id;
-	  if (edgeHash[id]) {
-		grid.push(edgeHash[id].weight);
+	  if (a === b) {
+			grid.push(0);
 	  } else {
-		grid.push(0);
+		  id = nodes[a].id + "-" + nodes[b].id;
+		  pos = $.inArray(id, edges);
+		  if (!(pos == -1)) {
+			grid.push(edgesObj[pos].weight);
+		  } else {
+			grid.push(0);
+		  }
 	  }
 	}
 	matrix.push(grid);
   }
   return matrix;
-}
-
-function orderByIdAscending(a, b) {
-  if (a.id > b.id) {
-	return 1;
-  }
-  return -1;
 }

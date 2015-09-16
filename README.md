@@ -8,5 +8,6 @@ This extension visualizes dependencies between two dimensions using an interacti
 This extension was created on the 1st Qlik Hackathon during Qonnections 2014 in Orlando.
 
 Update:
-1 fixed some data aggregation issues
-2 added selection capability on groups and links
+
+1. fixed some data aggregation issues
+2. added selection capability on groups and links

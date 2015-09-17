@@ -54,7 +54,7 @@ d3.chart.dependencyWheel = function(options) {
 	  var matrix = data.matrix;
       var packageNames = data.packageNames;
 	  var nodes = data.nodes;
-	  var dim1cnt = Math.max(0,data.dim1cnt);
+	  var dim1cnt = Math.max(1,data.dim1cnt);
 	  var colorPalette = data.colorPalette;
       var radius = width / 2 - margin;
 

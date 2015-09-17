@@ -115,7 +115,7 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
                   if(this[0].qIsOtherCell) {
 						this[0].qText = layout.qHyperCube.qDimensionInfo[0].othersLabel;
                   }
-				  node1Id = dimensionLabels[0] + ":" + this[0].qText;
+				  node1Id = dimensionLabels[0] + ": " + this[0].qText;
                   if ($.inArray(this[0].qText, nodes) == -1) {
                     nodes.push(this[0].qText);
                     nodesObj.push({id: node1Id, label: this[0].qText, dim: 0, num: this[0].qNum, element: this[0].qElemNumber});
@@ -127,7 +127,7 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
                   if (this[1].qText == '-') {
                     this[1].qText = emtpyDim;
                   }
-				  node2Id = dimensionLabels[1] + ":" + this[1].qText;
+				  node2Id = dimensionLabels[1] + ": " + this[1].qText;
                   if ($.inArray(this[1].qText, nodes2) == -1) {
 					nodes2.push(this[1].qText);
                     nodesObj2.push({id: node2Id, label: this[1].qText, dim: 1, num: this[1].qNum, element: this[1].qElemNumber});

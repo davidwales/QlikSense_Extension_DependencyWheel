@@ -11,3 +11,8 @@ Update:
 
 1. fixed some data aggregation issues
 2. added selection capability on groups and links
+3. added option to have an aggregate mode for two dimensions (usual chord chart)
+4. added percentage of group and link in titles
+5. sophisticated selection possibilities for both modes
+
+![Dependency Wheel aggregated in Qlik Sense](Aggregated.png)

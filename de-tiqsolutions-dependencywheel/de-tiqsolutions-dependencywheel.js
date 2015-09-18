@@ -204,7 +204,15 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
               var elementWidth = Math.min($element.width(),$element.height());
               var chartWidth = Math.floor(elementWidth * 0.76);
 
-              $element.append($('<div />').attr("id", id).width($element.width()).height($element.height()));
+			  // Check to see if the chart element has already been created
+			  if (document.getElementById(id)) {
+				// if it has been created, empty it's contents so we can redraw it
+				$("#" + id).empty();
+			  } 
+			  else {
+				// if it hasn't been created, create it with the appropriate id and size
+                $element.append($('<div />').attr("id", id).width($element.width()).height($element.height()));
+			  } 
 
               var options = {
                 elementId: id,

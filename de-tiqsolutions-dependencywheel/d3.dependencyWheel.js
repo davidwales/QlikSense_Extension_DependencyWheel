@@ -169,6 +169,7 @@ d3.chart.dependencyWheel = function(options) {
         .each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
         .attr("dy", ".35em")
         .attr("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+		.attr("class", "mono")
         .attr("transform", function(d) {
           return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")" +
             "translate(" + (radius + 26) + ")" +

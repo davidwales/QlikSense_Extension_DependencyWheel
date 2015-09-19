@@ -9,7 +9,11 @@ requirejs.config({
 		}
 	}
 });
-define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, qlik, dependencyWheel, chroma) {
+define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min", "text!./styles/de-tiqsolutions-dependencywheel.css"], 
+function($, qlik, dependencyWheel, chroma,cssContent) {
+
+	$("<style>").html(cssContent).appendTo("head");
+
 	return {
 		initialProperties: {
 			version: 1.0,
@@ -264,6 +268,8 @@ define(["jquery", "qlik", "./d3.dependencyWheel", "./chroma.min"], function($, q
 					// if it hasn't been created, create it with the appropriate id and size
 					$element.append($('<div />').attr("id", id).width($element.width()).height($element.height()));
 				} 
+				// keep mouse cursor arrow instead of text select (auto)
+				$("#"+id).css('cursor','default');
 
 				var options = {
 					elementId: id,

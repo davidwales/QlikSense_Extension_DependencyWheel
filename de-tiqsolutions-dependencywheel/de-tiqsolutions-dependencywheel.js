@@ -22,7 +22,7 @@ function($, qlik, dependencyWheel, chroma,cssContent) {
 				qMeasures: [],
 				qInitialDataFetch: [{
 					qWidth: 3,
-					qHeight: 500
+					qHeight: 3333
 				}]
 			}
 		},

@@ -2,9 +2,9 @@
 Created by Ralf Becher - ralf.becher@tiq-solutions.de - (c) 2015 TIQ Solutions, Leipzig, Germany
 Tested on Qlik Sense 2.1.1
 */
-define(["jquery", "qlik", "./d3.min", "./chroma.min", "text!./styles/de-tiqsolutions-dependencywheel.css"], 
-function($, qlik, d3, chroma, cssContent) {
-	$("<style>").html(cssContent).appendTo("head");
+define(["jquery", "./chroma.min", "./d3.min", "css!./styles/de-tiqsolutions-dependencywheel.css"], 
+function($, chroma) {
+	'use strict';
 	return {
 		initialProperties: {
 			version: 1.0,
@@ -84,7 +84,7 @@ function($, qlik, d3, chroma, cssContent) {
 		},
 
 		paint: function ( $element, layout ) {
- 
+
 			$element.html("");  
 
 			var qData = layout.qHyperCube.qDataPages[0];
@@ -233,7 +233,7 @@ function($, qlik, d3, chroma, cssContent) {
 					colorPalette = [1, 1],
 					colorPaletteSize = nodes.length,
 					colorPaletteStep = (colorPaletteSize == 1 ? 1 : 1 / (colorPaletteSize - 1));
-				for (i = 0; i < colorPaletteSize; i++) {
+				for (var i = 0; i < colorPaletteSize; i++) {
 					colorPalette[i] = colors(i * colorPaletteStep);
 				}
 				

@@ -9,3 +9,32 @@ text.mono-small {
 	font-family: "QlikView Sans", sans-serif;
 	fill: #595959;
 }
+
+.irregular-tooltip {
+	position: fixed;
+	padding: 5px;
+	width: auto;
+	background-color: #404040;
+	border-radius: 5px;
+	z-index: 10;
+	pointer-events: none;
+}
+
+.irregular-tooltip
+	.irregular-tooltip-header {
+		margin: 5px;
+		font-family: "QlikView Sans", sans-serif;
+		font-size: 13px;
+		font-weight: bold;
+		line-height: 18px;
+		color: white;
+	}
+	
+.irregular-tooltip
+	.irregular-tooltip-content {
+		margin: 5px;
+		font-family: "QlikView Sans", sans-serif;
+		font-size: 13px;
+		line-height: 18px;
+		color: white;
+	}

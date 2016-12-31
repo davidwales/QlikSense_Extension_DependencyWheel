@@ -2,8 +2,8 @@
 Created by Ralf Becher - ralf.becher@tiq-solutions.de - (c) 2015 TIQ Solutions, Leipzig, Germany
 Tested on Qlik Sense 2.1.1
 */
-define(["jquery", "./chroma.min", "./d3.min", "css!./styles/de-tiqsolutions-dependencywheel.css"],
-	function ($, chroma) {
+define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./styles/de-tiqsolutions-dependencywheel.css"],
+	function ($, qlik, _, chroma) {
 		'use strict';
 		return {
 			initialProperties: {
@@ -107,8 +107,9 @@ define(["jquery", "./chroma.min", "./d3.min", "css!./styles/de-tiqsolutions-depe
 				canTakeSnapshot: true
 			},
 
-			paint: function ($element, layout) {
+			paint: _.debounce(function ($element, layout) {
 
+                //console.log("Paint", (new Date()).getTime());
 				$element.html("");
 
 				var qData = layout.qHyperCube.qDataPages[0];
@@ -295,7 +296,7 @@ define(["jquery", "./chroma.min", "./d3.min", "css!./styles/de-tiqsolutions-depe
 						maxStrLength: labelSize
 					};
 
-					var chart = dependencyWheel(options);
+					var chart = dependencyWheel(options, !(qlik.navigation.getMode() === "analysis"));
 					d3.select('#' + id)
 						.datum(data)
 						.call(chart);
@@ -304,7 +305,7 @@ define(["jquery", "./chroma.min", "./d3.min", "css!./styles/de-tiqsolutions-depe
 					var bb = svg[0].getBBox();
 					svg[0].setAttribute('viewBox', [bb.x, bb.y, bb.width, bb.height].join(','));
 				}
-			}
+			}, 250, true)
 		};
 	});
 
@@ -360,7 +361,7 @@ var tooltipDisplay = function (that, tooltipSelector, tooltipSelectorHeader, too
  * @license MIT
  * @see https://github.com/fzaninotto/DependencyWheel for complete source and license
  */
-var dependencyWheel = function (options) {
+var dependencyWheel = function (options, isEditMode) {
 	if (options) {
 		var width = options.width;
 		var margin = options.margin;
@@ -372,14 +373,11 @@ var dependencyWheel = function (options) {
 		var padding = 0.02;
 		var maxStrLength = 20;
 	}
-
+   
 	function chart(selection) {
 		var id = this[0][0].id;
 
 		selection.each(function (data) {
-
-			//var formatX = d3.format("0,.2f");
-
 			var self = data.self,
 				matrix = data.matrix,
 				packageNames = data.packageNames,
@@ -520,12 +518,14 @@ var dependencyWheel = function (options) {
 					return "rotate(" + rotation + ")";
 				})
 				.on("click", function (d, i) {
-					if (aggregateDims) {
-						self.backendApi.selectValues(0, [nodes[i].dim0], false);
-						self.backendApi.selectValues(1, [nodes[i].dim1], false);
-					} else {
-						self.backendApi.selectValues(nodes[i].dim, [nodes[i].element], true);
-					}
+                    if (!isEditMode) {                        
+                        if (aggregateDims) {
+                            self.backendApi.selectValues(0, [nodes[i].dim0], false);
+                            self.backendApi.selectValues(1, [nodes[i].dim1], false);
+                        } else {
+                            self.backendApi.selectValues(nodes[i].dim, [nodes[i].element], true);
+                        }
+                    }
 				})
 				;
 			// g.append("title").text(function (d, i, g) {
@@ -595,14 +595,16 @@ var dependencyWheel = function (options) {
 				})
 				.style("opacity", 1)
 				.on("click", function (d, i) {
-					if (aggregateDims) {
-						self.backendApi.selectValues(0, [nodes[d.source.index].dim0, nodes[d.target.index].dim0], false);
-						self.backendApi.selectValues(1, [nodes[d.source.index].dim1, nodes[d.target.index].dim1], false);
-					} else {
-						self.backendApi.selectValues(0, [nodes[d.source.index].element], false);
-						self.backendApi.selectValues(1, [nodes[d.target.index].element], false);
-					}
-				})
+                    if (!isEditMode) { 
+                        if (aggregateDims) {
+                            self.backendApi.selectValues(0, [nodes[d.source.index].dim0, nodes[d.target.index].dim0], false);
+                            self.backendApi.selectValues(1, [nodes[d.source.index].dim1, nodes[d.target.index].dim1], false);
+                        } else {
+                            self.backendApi.selectValues(0, [nodes[d.source.index].element], false);
+                            self.backendApi.selectValues(1, [nodes[d.target.index].element], false);
+                        }
+                    }
+                })
 				.on("mouseover", fadeOther(0.15))
 				.on("mouseout", fadeOther(1))
 				.on("mouseenter", function (d, i, g) {
@@ -632,26 +634,6 @@ var dependencyWheel = function (options) {
 						.remove
 						;
 				})
-
-
-			// Add an elaborate mouseover title for each chord.
-			// .append("title").text(function (d) {
-			// 	if (aggregateDims) {
-			// 		if (nodes[d.source.index].id == nodes[d.target.index].id) {
-			// 			return (nodes[d.source.index].id + " ↔ " + nodes[d.target.index].id + ": " + formatX(d.source.value) + " (" + formatX(d.source.value / gValuesObj[nodes[d.source.index].id] * 100) + "%)");
-			// 		} else {
-			// 			return (
-			// 				nodes[d.source.index].id + " → " + nodes[d.target.index].id + ": " + formatX(d.source.value) + " (" + formatX(d.source.value / gValuesObj[nodes[d.source.index].id] * 100) + "%)\n" +
-			// 				nodes[d.target.index].id + " → " + nodes[d.source.index].id + ": " + formatX(d.target.value) + " (" + formatX(d.target.value / gValuesObj[nodes[d.target.index].id] * 100) + "%)"
-			// 			);
-			// 		}
-			// 	} else {
-			// 		return (nodes[d.source.index].id + " → " + nodes[d.target.index].id + "\n" + formatX(d.source.value) +
-			// 			" (" + formatX(d.source.value / gValuesObj[nodes[d.source.index].id] * 100) + "% → " +
-			// 			formatX(d.source.value / gValuesObj[nodes[d.target.index].id] * 100) + "%)");
-			// 	}
-			// });
-
 		});
 
 	}

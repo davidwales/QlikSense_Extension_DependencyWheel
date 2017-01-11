@@ -112,16 +112,17 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
 
                 var render = function (element, layout) {
                     //console.log("render", (new Date).getTime());
-                    console.log("layout", layout);
-
-                    element.html("");
+                    //console.log("layout", layout);
 
                     var qData = layout.qHyperCube.qDataPages[0];
-                    var id = "container_" + layout.qInfo.qId,
+                    var id = "container-" + layout.qInfo.qId,
                         aggregateDims = layout.aggregateDims,
                         labelSize = layout.labelSize,
                         edgeDim = layout.qHyperCube.qDimensionInfo.length > 2,
                         measureField = layout.qHyperCube.qDimensionInfo.length;
+
+                    element.empty();
+                    element.append($('<div />').attr("id", id).width(element.width()).height(element.height())).css('cursor', 'default');
 
                     // custom properties
                     var colorSchema = layout.colorSchema.split(",");
@@ -343,17 +344,6 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
 
                         var elementWidth = Math.min(element.width(), element.height());
                         var chartWidth = Math.floor(elementWidth * 0.76);
-
-                        // Check to see if the chart element has already been created
-                        if (document.getElementById(id)) {
-                            // if it has been created, empty it's contents so we can redraw it
-                            $("#" + id).empty();
-                        } else {
-                            // if it hasn't been created, create it with the appropriate id and size
-                            element.append($('<div />').attr("id", id).width(element.width()).height(element.height()));
-                        }
-                        // keep mouse cursor arrow instead of text select (auto)
-                        $("#" + id).css('cursor', 'default');
 
                         var options = {
                             elementId: id,

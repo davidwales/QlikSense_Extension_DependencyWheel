@@ -12,6 +12,8 @@ This extension was initially created during the 1st Qlik Hackathon at Qonnection
 2. Target Node Id or Name
 3. Edge Id (optional, important for detailled selections)
 
+Hint: dimensions should not contain null values
+
 ### Measures:
 1. Edge KPI (additive)
 

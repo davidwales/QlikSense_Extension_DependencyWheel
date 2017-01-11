@@ -719,19 +719,19 @@ var dependencyWheel = function (options, isEditMode) {
                         if (edgeDim) {
                             var sourceElement = nodes[d.source.index].element,
                                 targetElement = nodes[d.target.index].element;
-                            var edgeToSelect1 = edges.find(function (e) {
+                            var edgeToSelect1 = $.grep(edges, function (e) {
                                 return (e.sourceElement == sourceElement && e.targetElement == targetElement);
                             });
-                            if (edgeToSelect1 != undefined) {
-                                scope.selectValues(2, [edgeToSelect1.edgeElement], true);
+                            if (edgeToSelect1.length > 0) {
+                                scope.selectValues(2, [edgeToSelect1[0].edgeElement], true);
                             }
                             if (aggregateDims && sourceElement != targetElement) {
-                                var edgeToSelect2 = edges.find(function (e) {
+                                var edgeToSelect2 = $.grep(edges, function (e) {
                                     return (e.sourceElement == targetElement && e.targetElement == sourceElement);
                                 });
-                                if (edgeToSelect2 != undefined) {
+                                if (edgeToSelect2.length > 0) {
                                     setTimeout(function () {
-                                        scope.selectValues(2, [edgeToSelect2.edgeElement], true);
+                                        scope.selectValues(2, [edgeToSelect2[0].edgeElement], true);
                                     }, 100);
                                 }
                             }

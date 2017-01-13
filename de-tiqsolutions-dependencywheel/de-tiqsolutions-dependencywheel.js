@@ -326,6 +326,9 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                             colorPalette[i] = colors(i * colorPaletteStep);
                         }
 
+                        var matrix = createMatrix(nodesObj, edges, edgesObj, aggregateDims);
+                        var matrixAggr = aggregateDims ? aggrMatrix(matrix) : 0;
+                        
                         var data = {
                             scope: scope,
                             self: this,
@@ -338,7 +341,8 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                             dim1cnt: dim1cnt,
                             aggregateDims: aggregateDims,
                             edgeDim: edgeDim,
-                            matrix: createMatrix(nodesObj, edges, edgesObj, aggregateDims),
+                            matrix: matrix,
+                            matrixAggr: matrixAggr,
                             colorPalette: colorPalette
                         };
 
@@ -407,21 +411,36 @@ function createMatrix(nodes, edges, edgesObj, aggregateDims) {
     for (a in nodes) {
         var grid = [];
         for (b in nodes) {
+            var val = 0;
             if (a === b && !aggregateDims) {
-                grid.push(0);
             } else {
                 id = nodes[a].id + "->" + nodes[b].id;
                 pos = $.inArray(id, edges);
-                if (!(pos == -1)) {
-                    grid.push(edgesObj[pos].weight);
-                } else {
-                    grid.push(0);
+                if (!(pos === -1)) {
+                    val = edgesObj[pos].weight;
                 }
             }
+            grid.push(val);
         }
         matrix.push(grid);
     }
     return matrix;
+}
+
+function aggrMatrix(matrix) {
+    var aggr = [];
+    for (var i = 0; i < matrix.length; i++) {
+        //from,to,total
+        aggr.push([d3.sum(matrix[i]), 0]);
+    }
+    for (var i = 0; i < matrix.length; i++) {
+        for (var j = 0; j < matrix.length; j++) {
+            if (!(i === j)) {
+                aggr[i][1] += matrix[j][i];
+            }
+        }
+    }
+    return aggr;
 }
 
 var tooltipDisplay = function (that, tooltipSelector, tooltipSelectorHeader, tooltipSelectorContent, ttHeader, ttContent, tooltipDelay, tooltipOpacity, divider) {
@@ -470,6 +489,7 @@ var dependencyWheel = function (options, isEditMode) {
             var scope = data.scope,
                 self = data.self,
                 matrix = data.matrix,
+                matrixAggr = data.matrixAggr,
                 packageNames = data.packageNames,
                 nodes = data.nodes,
                 edges = data.edges,
@@ -637,9 +657,6 @@ var dependencyWheel = function (options, isEditMode) {
                         }
                     }
                 });
-            // g.append("title").text(function (d, i, g) {
-            // 	return "Total " + nodes[i].id + "\n" + formatX(d.value) + " (" + formatX(d.value / sum * 100) + "%)";
-            // });
 
             var gValuesArr = g[0].map(function (d, i) {
                 return [nodes[i].id, d.__data__.value];
@@ -660,8 +677,16 @@ var dependencyWheel = function (options, isEditMode) {
                         .style("opacity", "0.6")
                         .attr("stroke", "#C4C4C4");
 
-                    var ttHeader = nodes[i].id,
+                    var ttHeader = "",
+                        ttContent = "";
+                    if (aggregateDims) {
+                        ttHeader = nodes[i].id + " → : " + matrixAggr[i][0].toLocaleString() + " (" + (matrixAggr[i][0] / sum * 100).toLocaleString() + "%)";
+                        ttContent = nodes[i].id + " ← : " + matrixAggr[i][1].toLocaleString() + " (" + (matrixAggr[i][1] / sum * 100).toLocaleString() + "%)<br/>" +
+                            nodes[i].id + " Σ &nbsp;&nbsp;: " + (matrixAggr[i][0] + matrixAggr[i][1]).toLocaleString() + " (" + ((matrixAggr[i][0] + matrixAggr[i][1]) / sum * 100).toLocaleString() + "%)";
+                    } else {
+                        ttHeader = nodes[i].id;
                         ttContent = "Total: " + d.value.toLocaleString() + " (" + (d.value / sum * 100).toLocaleString() + "%)";
+                    } 
                     tooltipDisplay(this, tooltipSelector, tooltipSelectorHeader, tooltipSelectorContent, ttHeader, ttContent, tooltipDelay, tooltipOpacity, 1);
                 })
                 .on("mouseleave", function (d) {
@@ -754,21 +779,29 @@ var dependencyWheel = function (options, isEditMode) {
                 .on("mouseover", fadeOther(0.15))
                 .on("mouseout", fadeOther(1))
                 .on("mouseenter", function (d, i, g) {
-                    var ttHeader = "Dependency",
-                        ttContent = "Content";
+                    var ttHeader = "",
+                        ttContent = "",
+                        spacer = "&#8226;&nbsp;&nbsp"
 
                     if (aggregateDims) {
                         if (nodes[d.source.index].id == nodes[d.target.index].id) {
-                            ttContent = (nodes[d.source.index].id + " ↔ " + nodes[d.target.index].id + ": " + d.source.value.toLocaleString() + " (" + (d.source.value / gValuesObj[nodes[d.source.index].id] * 100).toLocaleString() + "%)");
+                            ttContent = nodes[d.source.index].id + " ↔ " + nodes[d.target.index].id + ": " + d.source.value.toLocaleString() + "<br/>" +
+                                        spacer + (d.source.value / (matrixAggr[d.source.index][0] + matrixAggr[d.source.index][1]) * 100).toLocaleString() + "% of " + nodes[d.source.index].id + "<br/>" +
+                                        spacer + (d.source.value / sum * 100).toLocaleString() + "% of Total";
                         } else {
                             ttContent =
-                                nodes[d.source.index].id + " → " + nodes[d.target.index].id + ": " + d.source.value.toLocaleString() + " (" + (d.source.value / gValuesObj[nodes[d.source.index].id] * 100).toLocaleString() + "%)<br/>" +
-                                nodes[d.target.index].id + " → " + nodes[d.source.index].id + ": " + d.target.value.toLocaleString() + " (" + (d.target.value / gValuesObj[nodes[d.target.index].id] * 100).toLocaleString() + "%)";
+                                nodes[d.source.index].id + " → " + nodes[d.target.index].id + ": " + d.source.value.toLocaleString() + "<br/>" +
+                                spacer + (d.source.value / gValuesObj[nodes[d.source.index].id] * 100).toLocaleString() + "% of " + nodes[d.source.index].id + "<br/>" +
+                                spacer + (d.source.value / sum * 100).toLocaleString() + "% of Total<br/><br/>" +
+                                nodes[d.target.index].id + " → " + nodes[d.source.index].id + ": " + d.target.value.toLocaleString() + "<br/>" +
+                                spacer + (d.target.value / gValuesObj[nodes[d.target.index].id] * 100).toLocaleString() + "% of " + nodes[d.target.index].id + "<br/>" +
+                                spacer + (d.target.value / sum * 100).toLocaleString() + "% of Total";
                         }
                     } else {
-                        ttContent = nodes[d.source.index].id + " → " + nodes[d.target.index].id + "<br/>" + d.source.value.toLocaleString() +
-                            " (" + (d.source.value / gValuesObj[nodes[d.source.index].id] * 100).toLocaleString() + "% → " +
-                            (d.source.value / gValuesObj[nodes[d.target.index].id] * 100).toLocaleString() + "%)";
+                        ttContent = nodes[d.source.index].id + " → " + nodes[d.target.index].id + ": " + d.source.value.toLocaleString() + "<br/>" +
+                            spacer + (d.source.value / gValuesObj[nodes[d.source.index].id] * 100).toLocaleString() + "% of " + nodes[d.source.index].id + "<br/>" +
+                            spacer + (d.source.value / gValuesObj[nodes[d.target.index].id] * 100).toLocaleString() + "% of " + nodes[d.target.index].id + "<br/>" +
+                            spacer + (d.source.value / sum * 100).toLocaleString() + "% of Total";
                     }
                     tooltipDisplay(this, tooltipSelector, tooltipSelectorHeader, tooltipSelectorContent, ttHeader, ttContent, tooltipDelay, tooltipOpacity, 2);
                 })

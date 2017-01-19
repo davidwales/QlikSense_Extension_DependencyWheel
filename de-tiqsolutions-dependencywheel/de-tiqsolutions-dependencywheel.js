@@ -383,13 +383,7 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                 scope.component.model.Validated.bind(function () {
                     if (!scope.layout.qSelectionInfo.qInSelections) {
                         //console.log("scope validated", (new Date).getTime());
-                        scope.renderMe(element, scope.layout);
-                    }
-                });
-
-                scope.$watch('layout.qSelectionInfo.qInSelections', function (newValue, oldValue) {
-                    if (newValue === false) {
-                        scope.renderMeLater(element, scope.layout);
+                        render(element, scope.layout);
                     }
                 });
                              

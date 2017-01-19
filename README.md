@@ -33,3 +33,19 @@ Hint: dimensions should not contain null values
 7. selection color feedback 
 
 ![Dependency Wheel aggregated in Qlik Sense](Aggregated.png)
+
+## Author
+
+**Ralf Becher**
+
++ [irregular.bi](http://irregular.bi)
+* [twitter/irregularbi](http://twitter.com/irregularbi)
+* [github.com/ralfbecher](http://github.com/ralfbecher)
+
+## License
+
+Copyright © 2017 Ralf Becher
+
+Released under the MIT license.
+
+***

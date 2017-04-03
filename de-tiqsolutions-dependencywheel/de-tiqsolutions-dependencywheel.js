@@ -622,12 +622,13 @@ var dependencyWheel = function (options, isEditMode) {
                 .on("click", function (d, i) {
                     if (!isEditMode) {
                         var paths = d3.select(this).select("path");
+                        console.log("paths clicked",paths);
                         if (paths[0].length > 0) {
-                            if (this.style.hasOwnProperty('colorBackup')) {
-                                paths[0][0].style.fill = this.style.colorBackup;
-                                delete this.style.colorBackup;
-                            } else {
-                                this.style.colorBackup = paths[0][0].style.fill;
+                            if (paths[0][0].hasOwnProperty('colorBackup')) {
+                                paths[0][0].style.fill = paths[0][0].colorBackup;
+                                delete paths[0][0].colorBackup;
+                            } else {                      
+                                paths[0][0].colorBackup = paths[0][0].style.fill;
                                 paths[0][0].style.fill = selectionColor;
                             }
                         }

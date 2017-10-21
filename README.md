@@ -3,6 +3,8 @@ Qlik Sense Extensions Dependency Wheel
 
 This extension visualizes dependencies between two dimensions using an interactive disc. Internally, a graph data model is used. Each disc section represents a source and/or target node, and links between arcs are edges and materialize dependencies between nodes. All aggregation and rendering is done client-side in JavaScript. Built with <a href="https://github.com/mbostock/d3">d3.js</a> and Francois Zaninotto's <a href="http://fzaninotto.github.com/DependencyWheel">d3.dependencyWheels.js</a>, published with the MIT open-source license.
 
+You can find a **supported version** with more features on the <a href="https://www.vizlib.com/marketplace">**Vizlib Marketplace**</a>.
+
 ![Dependency Wheel example in Qlik Sense](DependencyWheel.gif)
 
 This extension was initially created during the 1st Qlik Hackathon at Qonnections April 2014 in Orlando.

@@ -108,21 +108,17 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                 canTakeSnapshot: true
             },
 
+            template: '<div style="cursor:default;"></div>',
+
             controller: ["$scope", "$element", function (scope, element) {
-
                 var render = function (element, layout) {
-                    //console.log("render", (new Date).getTime());
-                    //console.log("layout", layout);
-
                     var qData = layout.qHyperCube.qDataPages[0];
-                    var id = "container-" + layout.qInfo.qId,
-                        aggregateDims = layout.aggregateDims,
+                    var aggregateDims = layout.aggregateDims,
                         labelSize = layout.labelSize,
                         edgeDim = layout.qHyperCube.qDimensionInfo.length > 2,
                         measureField = layout.qHyperCube.qDimensionInfo.length;
 
                     element.empty();
-                    element.append($('<div />').attr("id", id).width(element.width()).height(element.height())).css('cursor', 'default');
 
                     // custom properties
                     var colorSchema = layout.colorSchema.split(",");
@@ -350,7 +346,7 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                         var chartWidth = Math.floor(elementWidth * 0.76);
 
                         var options = {
-                            elementId: id,
+                            element: element,
                             width: chartWidth,
                             margin: chartWidth * .15,
                             padding: 0.02,
@@ -358,11 +354,11 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                         };
 
                         var chart = dependencyWheel(options, !(qlik.navigation.getMode() === "analysis"));
-                        d3.select('#' + id)
+                        d3.select(element)
                             .datum(data)
                             .call(chart);
 
-                        var svg = $('#' + id + ' svg');
+                        var svg = $(element).find('svg');
                         var bb = svg[0].getBBox();
                         svg[0].setAttribute('viewBox', [bb.x, bb.y, bb.width, bb.height].join(','));
                     }
@@ -379,7 +375,7 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                 };
 
                 scope.renderMe(element, scope.layout);
-
+                
                 scope.component.model.Validated.bind(function () {
                     if (!scope.layout.qSelectionInfo.qInSelections) {
                         //console.log("scope validated", (new Date).getTime());
@@ -437,18 +433,21 @@ function aggrMatrix(matrix) {
     return aggr;
 }
 
-var tooltipDisplay = function (that, tooltipSelector, tooltipSelectorHeader, tooltipSelectorContent, ttHeader, ttContent, tooltipDelay, tooltipOpacity, divider) {
-    d3.select(tooltipSelectorHeader)
+var tooltipDisplay = function (that, tooltip, tooltipHeader, tooltipContent, ttHeader, ttContent, tooltipDelay, tooltipOpacity, divider) {
+    tooltipHeader
         .html(ttHeader);
-    d3.select(tooltipSelectorContent)
+    tooltipContent
         .html(ttContent);
 
-    var tt = d3.select(tooltipSelector);
     var bbRect = that.getBoundingClientRect();
 
-    var xPosition = Math.max(10, (window.pageXOffset + bbRect.left) - tt[0][0].clientWidth / divider + bbRect.width / 2);
-    var yPosition = Math.max(10, (window.pageYOffset + bbRect.top) - tt[0][0].clientHeight / divider + bbRect.height / 2);
-    tt.style("left", xPosition + "px")
+    var e = $(tooltip).get(0)[0];
+    var clientWidth = e.clientWidth, clientHeight = e.clientHeight;
+    
+    var xPosition = Math.max(10, (window.pageXOffset + bbRect.left) - clientWidth / divider + bbRect.width / 2);
+    var yPosition = Math.max(10, (window.pageYOffset + bbRect.top) - clientHeight / divider + bbRect.height / 2);
+    
+    tooltip.style("left", xPosition + "px")
         .style("top", yPosition + "px")
         .transition()
         .delay(tooltipDelay)
@@ -463,20 +462,20 @@ var tooltipDisplay = function (that, tooltipSelector, tooltipSelectorHeader, too
  * @see https://github.com/fzaninotto/DependencyWheel for complete source and license
  */
 var dependencyWheel = function (options, isEditMode) {
-    if (options) {
+   // if (options) {
+        var element = options.element;
         var width = options.width;
         var margin = options.margin;
         var padding = options.padding;
         var maxStrLength = options.maxStrLength;
-    } else {
-        var width = 800;
-        var margin = 150;
-        var padding = 0.02;
-        var maxStrLength = 20;
-    }
+    // } else {
+    //     var width = 800;
+    //     var margin = 150;
+    //     var padding = 0.02;
+    //     var maxStrLength = 20;
+    // }
 
     function chart(selection) {
-        var id = this[0][0].id;
         var selectionColor = '#52CC52';
 
         selection.each(function (data) {
@@ -499,23 +498,25 @@ var dependencyWheel = function (options, isEditMode) {
                 .padding(padding)
                 .sortSubgroups(d3.descending);
 
-            var tooltip = d3.select(this).append("div")
+            var tooltip = d3.selectAll(element).append("div")
                 .attr("class", "irregular-tooltip")
-                .style("opacity", "0");
+                .style("opacity", "0")
+                .style("z-index", "999");
             tooltip.append("p")
                 .attr("class", "irregular-tooltip-header");
             tooltip.append("p")
                 .attr("class", "irregular-tooltip-content");
 
-            var tooltipSelector = "#" + id + " .irregular-tooltip",
-                tooltipSelectorHeader = "#" + id + " .irregular-tooltip-header",
-                tooltipSelectorContent = "#" + id + " .irregular-tooltip-content",
+            var tooltip = tooltip, //d3.selectAll(element).selectAll(".irregular-tooltip"),
+                tooltipHeader = tooltip.selectAll(".irregular-tooltip-header"),
+                tooltipContent = tooltip.selectAll(".irregular-tooltip-content"),
                 tooltipDelay = 750,
                 tooltipOpacity = "0.9";
 
+
             // Select the svg element, if it exists.
             //var svg = d3.select(this).selectAll("svg").data([data]);
-            var svg = d3.select(this).append("svg:svg")
+            var svg = d3.selectAll(element).append("svg:svg")
                 .attr("width", "100%")
                 .attr("height", "100%")
                 .attr("preserveAspectRatio", "xMidYMid")
@@ -682,13 +683,13 @@ var dependencyWheel = function (options, isEditMode) {
                         ttHeader = nodes[i].id;
                         ttContent = "Total: " + d.value.toLocaleString() + " (" + (d.value / sum * 100).toLocaleString() + "%)";
                     } 
-                    tooltipDisplay(this, tooltipSelector, tooltipSelectorHeader, tooltipSelectorContent, ttHeader, ttContent, tooltipDelay, tooltipOpacity, 1);
+                    tooltipDisplay(this, tooltip, tooltipHeader, tooltipContent, ttHeader, ttContent, tooltipDelay, tooltipOpacity, 1);
                 })
                 .on("mouseleave", function (d) {
                     d3.select(this)
                         .style("opacity", "1")
                         .attr("stroke", fill);
-                    d3.select(tooltipSelector)
+                    tooltip
                         .style("opacity", "0")
                         .transition()
                         .remove;
@@ -798,10 +799,10 @@ var dependencyWheel = function (options, isEditMode) {
                             spacer + (d.source.value / gValuesObj[nodes[d.target.index].id] * 100).toLocaleString() + "% of " + nodes[d.target.index].id + "<br/>" +
                             spacer + (d.source.value / sum * 100).toLocaleString() + "% of Total";
                     }
-                    tooltipDisplay(this, tooltipSelector, tooltipSelectorHeader, tooltipSelectorContent, ttHeader, ttContent, tooltipDelay, tooltipOpacity, 2);
+                    tooltipDisplay(this, tooltip, tooltipHeader, tooltipContent, ttHeader, ttContent, tooltipDelay, tooltipOpacity, 2);
                 })
                 .on("mouseleave", function (d) {
-                    d3.select(tooltipSelector)
+                    tooltip
                         .style("opacity", "0")
                         .transition()
                         .remove;

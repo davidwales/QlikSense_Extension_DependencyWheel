@@ -104,7 +104,7 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                     }
                 }
             },
-            
+
             support: {
                 snapshot: true,
                 export: true,
@@ -468,18 +468,11 @@ var tooltipDisplay = function (that, tooltip, tooltipHeader, tooltipContent, ttH
  * @see https://github.com/fzaninotto/DependencyWheel for complete source and license
  */
 var dependencyWheel = function (options, isEditMode) {
-   // if (options) {
-        var element = options.element;
-        var width = options.width;
-        var margin = options.margin;
-        var padding = options.padding;
-        var maxStrLength = options.maxStrLength;
-    // } else {
-    //     var width = 800;
-    //     var margin = 150;
-    //     var padding = 0.02;
-    //     var maxStrLength = 20;
-    // }
+    var element = options.element;
+    var width = options.width;
+    var margin = options.margin;
+    var padding = options.padding;
+    var maxStrLength = options.maxStrLength;
 
     function chart(selection) {
         var selectionColor = '#52CC52';
@@ -507,20 +500,15 @@ var dependencyWheel = function (options, isEditMode) {
             var tooltip = d3.selectAll(element).append("div")
                 .attr("class", "irregular-tooltip")
                 .style("opacity", "0");
-            tooltip.append("p")
+            var tooltipHeader = tooltip.append("p")
                 .attr("class", "irregular-tooltip-header");
-            tooltip.append("p")
+            var tooltipContent = tooltip.append("p")
                 .attr("class", "irregular-tooltip-content");
 
-            var tooltip = tooltip, //d3.selectAll(element).selectAll(".irregular-tooltip"),
-                tooltipHeader = tooltip.selectAll(".irregular-tooltip-header"),
-                tooltipContent = tooltip.selectAll(".irregular-tooltip-content"),
-                tooltipDelay = 750,
+            var tooltipDelay = 750,
                 tooltipOpacity = "0.9";
 
-
             // Select the svg element, if it exists.
-            //var svg = d3.select(this).selectAll("svg").data([data]);
             var svg = d3.selectAll(element).append("svg:svg")
                 .attr("width", "100%")
                 .attr("height", "100%")

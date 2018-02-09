@@ -104,8 +104,11 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                     }
                 }
             },
-            snapshot: {
-                canTakeSnapshot: true
+            
+            support: {
+                snapshot: true,
+                export: true,
+                exportData: true
             },
 
             template: '<div style="cursor:default;"></div>',
@@ -503,8 +506,7 @@ var dependencyWheel = function (options, isEditMode) {
 
             var tooltip = d3.selectAll(element).append("div")
                 .attr("class", "irregular-tooltip")
-                .style("opacity", "0")
-                .style("z-index", "999");
+                .style("opacity", "0");
             tooltip.append("p")
                 .attr("class", "irregular-tooltip-header");
             tooltip.append("p")

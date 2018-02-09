@@ -111,7 +111,8 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
             template: '<div style="cursor:default;"></div>',
 
             controller: ["$scope", "$element", function (scope, element) {
-                var render = function (element, layout) {
+
+                var render = function(element, layout) {
                     var qData = layout.qHyperCube.qDataPages[0];
                     var aggregateDims = layout.aggregateDims,
                         labelSize = layout.labelSize,
@@ -354,17 +355,17 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                         };
 
                         var chart = dependencyWheel(options, !(qlik.navigation.getMode() === "analysis"));
-                        d3.select(element)
+                        var d = d3.select(element)
                             .datum(data)
                             .call(chart);
-
+                        
                         var svg = $(element).find('svg');
-                        var bb = svg[0].getBBox();
-                        svg[0].setAttribute('viewBox', [bb.x, bb.y, bb.width, bb.height].join(','));
+                        var bb = svg.get(0).getBBox();
+                        svg.attr('viewBox', [bb.x, bb.y, bb.width, bb.height].join(','));
                     }
 
                 };
-                scope.renderMe = _.debounce(render, 250, true);
+
                 scope.renderMeLater = _.debounce(render, 250);
 
                 scope.getSizing = function () {
@@ -374,22 +375,24 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                     };
                 };
 
-                scope.renderMe(element, scope.layout);
+                render(element, scope.layout);
                 
                 scope.component.model.Validated.bind(function () {
                     if (!scope.layout.qSelectionInfo.qInSelections) {
-                        //console.log("scope validated", (new Date).getTime());
                         render(element, scope.layout);
                     }
                 });
                              
                 scope.$watch(scope.getSizing, function (newValue, oldValue) {
-                    //console.log("scope.getSizing", (new Date).getTime(), newValue, oldValue);
                     // subtitle frame and selection frame reduces size
                     if (Math.abs(oldValue.height - newValue.height) > 23 || Math.abs(oldValue.width - newValue.width) > 34) {
                         scope.renderMeLater(element, scope.layout);
                     }
                 }, true);
+
+                scope.$on('$destroy', function() {
+                    scope.component.model.Validated.unbind();
+                });
             }]
         };
     });

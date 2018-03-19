@@ -509,9 +509,9 @@ var dependencyWheel = function (options, isEditMode) {
                 tooltipOpacity = "0.9";
 
             // Select the svg element, if it exists.
-            var svg = d3.selectAll(element).append("svg:svg")
-                .attr("width", "100%")
-                .attr("height", "100%")
+            var svg = d3.selectAll(element).append("svg")
+                .attr("width", width)
+                .attr("height", width)
                 .attr("preserveAspectRatio", "xMidYMid")
                 .attr("class", "dependencyWheel");
 
@@ -608,7 +608,7 @@ var dependencyWheel = function (options, isEditMode) {
 
             var g = gEnter.selectAll("g.group")
                 .data(chord.groups)
-                .enter().append("svg:g")
+                .enter().append("g")
                 .attr("class", "group")
                 .attr("transform", function (d) {
                     return "rotate(" + rotation + ")";
@@ -616,8 +616,40 @@ var dependencyWheel = function (options, isEditMode) {
                 .on("click", function (d, i) {
                     if (!isEditMode) {
                         var paths = d3.select(this).select("path");
-                        console.log("paths clicked",paths);
-                        if (paths[0].length > 0) {
+                        var selected = false;
+                        //console.log("paths clicked",paths);
+                        if (aggregateDims) {
+                            if (edgeDim) {
+                                var edgesToSelect = edges.filter(function (e) {
+                                    return ((nodes[i].dim0 > -1 && e.sourceElement == nodes[i].dim0) 
+                                        || (nodes[i].dim1 > -1 && e.targetElement == nodes[i].dim1));
+                                }).map(function (e) {
+                                    return e.edgeElement;
+                                });
+                                if (edgesToSelect.length > 0) {
+                                    scope.selectValues(2, edgesToSelect, true);
+                                    selected = true;
+                                }
+                            } else {
+                                if (nodes[i].dim === 0) {
+                                    if (nodes[i].dim0 > -1) {
+                                        scope.selectValues(0, [nodes[i].dim0], true);
+                                        selected = true;
+                                    }
+                                } else {
+                                    if (nodes[i].dim1 > -1) {
+                                        scope.selectValues(1, [nodes[i].dim1], true);
+                                        selected = true;
+                                    }
+                                }
+                            }
+                        } else {
+                            if (nodes[i].element > -1) {
+                                scope.selectValues(nodes[i].dim, [nodes[i].element], true);
+                                selected = true;
+                            }
+                        }
+                        if (selected && paths[0].length > 0) {
                             if (paths[0][0].hasOwnProperty('colorBackup')) {
                                 paths[0][0].style.fill = paths[0][0].colorBackup;
                                 delete paths[0][0].colorBackup;
@@ -625,24 +657,6 @@ var dependencyWheel = function (options, isEditMode) {
                                 paths[0][0].colorBackup = paths[0][0].style.fill;
                                 paths[0][0].style.fill = selectionColor;
                             }
-                        }
-                        if (aggregateDims) {
-                            if (edgeDim) {
-                                var edgesToSelect = edges.filter(function (e) {
-                                    return (e.sourceElement == nodes[i].dim0 || e.targetElement == nodes[i].dim1);
-                                }).map(function (e) {
-                                    return e.edgeElement;
-                                });
-                                scope.selectValues(2, edgesToSelect, true);
-                            } else {
-                                if (nodes[i].dim === 0) {
-                                    scope.selectValues(0, [nodes[i].dim0], true);
-                                } else {
-                                    scope.selectValues(1, [nodes[i].dim1], true);
-                                }
-                            }
-                        } else {
-                            scope.selectValues(nodes[i].dim, [nodes[i].element], true);
                         }
                     }
                 });
@@ -655,7 +669,7 @@ var dependencyWheel = function (options, isEditMode) {
                 gValuesObj[value[0]] = value[1];
             });
 
-            g.append("svg:path")
+            g.append("path")
                 .style("fill", fill)
                 .style("stroke", fill)
                 .attr("d", arc)
@@ -688,7 +702,7 @@ var dependencyWheel = function (options, isEditMode) {
                         .remove;
                 });
 
-            g.append("svg:text")
+            g.append("text")
                 .each(function (d) {
                     d.angle = (d.startAngle + d.endAngle) / 2;
                 })
@@ -723,46 +737,66 @@ var dependencyWheel = function (options, isEditMode) {
                 .style("opacity", 1)
                 .on("click", function (d, i) {
                     if (!isEditMode) {
-                        if (this.style.hasOwnProperty('colorBackup')) {
-                            this.style.fill = this.style.colorBackup;
-                            delete this.style.colorBackup;
-                        } else {
-                            this.style.colorBackup = this.style.fill;
-                            this.style.fill = selectionColor;
-                        }
+                        var selected = false;
                         if (edgeDim) {
                             var sourceElement = nodes[d.source.index].element,
                                 targetElement = nodes[d.target.index].element;
                             var edgeToSelect1 = $.grep(edges, function (e) {
-                                return (e.sourceElement == sourceElement && e.targetElement == targetElement);
+                                return ((sourceElement > -1 && e.sourceElement == sourceElement 
+                                    && targetElement > -1 && e.targetElement == targetElement));
                             });
                             if (edgeToSelect1.length > 0) {
                                 scope.selectValues(2, [edgeToSelect1[0].edgeElement], true);
+                                selected = true;
                             }
                             if (aggregateDims && sourceElement != targetElement) {
                                 var edgeToSelect2 = $.grep(edges, function (e) {
-                                    return (e.sourceElement == targetElement && e.targetElement == sourceElement);
+                                    return (targetElement > -1 && e.sourceElement == targetElement
+                                        && sourceElement > -1 && e.targetElement == sourceElement);
                                 });
                                 if (edgeToSelect2.length > 0) {
                                     setTimeout(function () {
                                         scope.selectValues(2, [edgeToSelect2[0].edgeElement], true);
                                     }, 100);
+                                    selected = true;
                                 }
                             }
                         } else {
                             if (aggregateDims) {
-                                scope.selectValues(0, [nodes[d.source.index].dim0, nodes[d.target.index].dim0], true);
-                                setTimeout(function () {
-                                    scope.selectValues(1, [nodes[d.source.index].dim1, nodes[d.target.index].dim1], true)
-                                }, 100);
+                                var edgeToSelect3 = $.grep([nodes[d.source.index].dim0, nodes[d.target.index].dim0], function (e) { return e > -1 });
+                                if (edgeToSelect3.length > 0) {
+                                    scope.selectValues(0, edgeToSelect3, true);
+                                    selected = true;
+                                }
+                                var edgeToSelect4 = $.grep([nodes[d.source.index].dim1, nodes[d.target.index].dim1], function (e) { return e > -1 });
+                                if (edgeToSelect4.length > 0) {
+                                    setTimeout(function () {
+                                        scope.selectValues(1, [nodes[d.source.index].dim1, nodes[d.target.index].dim1], true)
+                                    }, 100);
+                                    selected = true;
+                                }
                             } else {
-                                scope.selectValues(0, [nodes[d.source.index].element], true);
-                                setTimeout(function () {
-                                    scope.selectValues(1, [nodes[d.target.index].element], true)
-                                }, 100);
+                                if (nodes[d.source.index].element > -1) {
+                                    scope.selectValues(0, [nodes[d.source.index].element], true);
+                                    selected = true;
+                                } 
+                                if (nodes[d.target.index].element > -1) {
+                                    setTimeout(function () {
+                                        scope.selectValues(1, [nodes[d.target.index].element], true)
+                                    }, 100);
+                                    selected = true;
+                                }
                             }
                         }
-
+                        if (selected) {
+                            if (this.style.hasOwnProperty('colorBackup')) {
+                                this.style.fill = this.style.colorBackup;
+                                delete this.style.colorBackup;
+                            } else {
+                                this.style.colorBackup = this.style.fill;
+                                this.style.fill = selectionColor;
+                            }
+                        }
                     }
                 })
                 .on("mouseover", fadeOther(0.15))

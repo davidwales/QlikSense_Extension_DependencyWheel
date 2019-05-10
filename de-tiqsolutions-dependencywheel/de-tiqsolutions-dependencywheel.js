@@ -111,7 +111,7 @@ define(["jquery", "qlik", "underscore", "./chroma.min", "./d3.min", "css!./style
                 exportData: true
             },
 
-            template: '<div style="cursor:default;"></div>',
+            template: '<div style="cursor:default;" class="dependencywheel"></div>',
 
             controller: ["$scope", "$element", function (scope, element) {
 
